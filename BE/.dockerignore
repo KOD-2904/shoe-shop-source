@@ -1,0 +1,8 @@
+target
+.git
+.idea
+.vscode
+.agents
+.codex-reference-stationery-shop
+.env
+*.iml

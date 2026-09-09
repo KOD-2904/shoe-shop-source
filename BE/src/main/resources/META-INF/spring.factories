@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.ttthinh.shoe_shop_basic.config.DotenvEnvironmentPostProcessor

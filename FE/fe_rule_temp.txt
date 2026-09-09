@@ -1,0 +1,22 @@
+Ở Trang Products
+	về phần phân bổ vị trí thì create product lại nằm ngang với danh sách product không hợp lý, tách xuống
+	rồi danh sách product thì có nhiều filter hơn khoogn chỉ theo tên, mà cho phép nhiều cái lọc theo brand, category như chỗ status luôn ... có thể thêm filter gì nữa thì cứ thêm
+	rồi product có url ảnh đại diện thfi cũng khoogn hiện thị nè, rồi chỉ hienejt hị tên của các product hay brand thôi chứ khoogn hiện id của nó.
+ở trang Brands
+	cũng tách phân tạo với danh sách như chỉnh sửa product ở trên, và tranh hiện thị id, và việc  thêm brand sao lại cả url và choose file, thiết kế bên BE là chose file rồi upload lên cloaudirany mà đúng không, hay ở đó có 2 option cho mình lựa chọn luôn(nếu gắn url luôn thì nó chèn vào db, còn nếu chọn file thì nó upload lên rồi lấy url được return rồi chen vào db)
+ở trang Category
+	thì cũng nên tách ra ra như 2 cái ở trên, không hiện thị id và cho thêm filter
+ở trang Vảiant
+	tách phần create variant với inventory tưc là cho nó xuống dòng
+	rồi cho thêm phần thêm hình ảnh cho variant nữa, cho chọn file ảnh rồi bên BE sẽ xử lý viecj upload lên cloaudinary rồi lấy url gán vào db
+
+rồi quay lại với trang người dùng
+	đang không hiện thị được ảnh
+	rồi với mỗi product, tức là một ô trên trang thì trong ô đó sẽ có
+	tên của product
+	sẽ có list variant thuộc product đó, nếu chọn vào một variant nào sẽ hiện thị thay thế ảnh của product bằng ảnh của variant, rồi sẽ có thêm tên cảu variant đó
+	rồi hiện thị các size đang còn inventory và khách có thể chọn, rồi có thêm thêm bớt số lượng bằng dấu +-
+	sau đó sẽ có thêm các nút như thêm vào giỏ hàng, hoặc checkout luôn tức là buy now
+	rổi nếu user click vào hình ảnh product thì sẽ ddauw về trang chi tiết sản phẩm,
+	ở đó thì cũng tương tụ như ở ngaoif trang chủ (tức là ở mỗi ô)
+	

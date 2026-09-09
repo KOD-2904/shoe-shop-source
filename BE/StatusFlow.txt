@@ -1,0 +1,506 @@
+SHOE SHOP - ORDER MANAGEMENT DESIGN
+
+==================================================
+
+1. TỔNG QUAN
+   ==================================================
+
+Trong hệ thống bán giày online có 3 luồng chính:
+
+1. Luồng đơn hàng (Order)
+2. Luồng thanh toán (Payment)
+3. Luồng vận chuyển (Shipping)
+
+Ba luồng này hoạt động độc lập nhưng liên kết với nhau.
+
+Ví dụ:
+
+Đơn hàng:
+SHIPPING
+
+Thanh toán:
+PAID
+
+Vận chuyển:
+DELIVERING
+
+Điều này hoàn toàn hợp lệ.
+
+Không nên gộp tất cả vào một enum duy nhất vì sẽ tạo ra rất nhiều trạng thái khó quản lý.
+
+==================================================
+2. ORDER STATUS
+===============
+
+OrderStatus đại diện cho trạng thái nghiệp vụ của shop.
+
+public enum OrderStatus {
+PENDING,
+CONFIRMED,
+PACKING,
+READY_TO_SHIP,
+SHIPPING,
+DELIVERED,
+CANCELLED,
+FAILED,
+RETURNED
+}
+
+---
+
+## PENDING
+
+Ý nghĩa:
+
+* User vừa checkout thành công.
+* Đơn đã được lưu vào database.
+* Chưa có nhân viên xử lý.
+
+Người có quyền thao tác:
+
+* User: được phép hủy.
+* Admin: được phép xác nhận hoặc hủy.
+
+Chuyển tiếp:
+
+PENDING
+-> CONFIRMED
+-> CANCELLED
+
+---
+
+## CONFIRMED
+
+Ý nghĩa:
+
+* Admin đã kiểm tra đơn.
+* Hàng vẫn còn trong kho.
+* Địa chỉ nhận hàng hợp lệ.
+
+Người có quyền thao tác:
+
+* Admin
+
+Chuyển tiếp:
+
+CONFIRMED
+-> PACKING
+-> CANCELLED
+
+---
+
+## PACKING
+
+Ý nghĩa:
+
+* Nhân viên kho đang lấy hàng.
+* Đang đóng gói.
+
+Người có quyền thao tác:
+
+* Admin
+* Nhân viên kho
+
+Chuyển tiếp:
+
+PACKING
+-> READY_TO_SHIP
+
+---
+
+## READY_TO_SHIP
+
+Ý nghĩa:
+
+* Đóng gói hoàn tất.
+* Sẵn sàng bàn giao cho GHN.
+
+Hành động:
+
+* Gọi API GHN.
+* Tạo vận đơn.
+
+Chuyển tiếp:
+
+READY_TO_SHIP
+-> SHIPPING
+
+---
+
+## SHIPPING
+
+Ý nghĩa:
+
+* GHN đã nhận hàng.
+* Đang giao.
+
+Người thao tác:
+
+* GHN cập nhật qua webhook.
+
+Chuyển tiếp:
+
+SHIPPING
+-> DELIVERED
+-> FAILED
+
+---
+
+## DELIVERED
+
+Ý nghĩa:
+
+* Khách đã nhận hàng.
+
+Nếu COD:
+
+PaymentStatus
+UNPAID -> PAID
+
+Đây thường là trạng thái cuối.
+
+---
+
+## FAILED
+
+Ý nghĩa:
+
+* Không giao được.
+
+Ví dụ:
+
+* Sai địa chỉ
+* Khách không nghe máy
+* Khách từ chối nhận
+
+Chuyển tiếp:
+
+FAILED
+-> SHIPPING
+-> RETURNED
+
+---
+
+## RETURNED
+
+Ý nghĩa:
+
+* Hàng hoàn về kho.
+
+Ví dụ:
+
+* Khách không nhận.
+* Hoàn trả sau giao.
+
+Đây thường là trạng thái cuối.
+
+---
+
+## CANCELLED
+
+Ý nghĩa:
+
+* Đơn bị hủy.
+
+Nguyên nhân:
+
+* User hủy.
+* Admin hủy.
+* Hết hàng.
+
+Đây là trạng thái cuối.
+
+==================================================
+3. PAYMENT STATUS
+=================
+
+public enum PaymentStatus {
+UNPAID,
+PAID,
+REFUNDED,
+FAILED
+}
+
+---
+
+## UNPAID
+
+Ví dụ:
+
+* Đơn COD.
+* Chưa thanh toán online.
+
+---
+
+## PAID
+
+Ví dụ:
+
+* VNPay thành công.
+* Momo thành công.
+* COD đã thu tiền.
+
+---
+
+## REFUNDED
+
+Ví dụ:
+
+* Hủy đơn đã thanh toán.
+* Trả hàng.
+
+---
+
+## FAILED
+
+Ví dụ:
+
+* VNPay lỗi.
+* Momo timeout.
+
+==================================================
+4. SHIPPING STATUS
+==================
+
+public enum ShippingStatus {
+NOT_CREATED,
+CREATED,
+PICKING,
+PICKED,
+DELIVERING,
+DELIVERED,
+DELIVERY_FAILED,
+RETURNING,
+RETURNED,
+CANCELLED
+}
+
+---
+
+## NOT_CREATED
+
+Chưa tạo đơn GHN.
+
+---
+
+## CREATED
+
+Đã tạo đơn GHN thành công.
+
+---
+
+## PICKING
+
+Shipper đang tới kho lấy hàng.
+
+---
+
+## PICKED
+
+GHN đã lấy hàng.
+
+---
+
+## DELIVERING
+
+Đang giao cho khách.
+
+---
+
+## DELIVERED
+
+Giao thành công.
+
+---
+
+## DELIVERY_FAILED
+
+Giao thất bại.
+
+---
+
+## RETURNING
+
+Đang hoàn hàng.
+
+---
+
+## RETURNED
+
+Đã hoàn về kho.
+
+==================================================
+5. USER FLOW
+============
+
+User checkout
+|
+v
+PENDING
+|
+v
+CONFIRMED
+|
+v
+PACKING
+|
+v
+READY_TO_SHIP
+|
+v
+SHIPPING
+|
+v
+DELIVERED
+
+User có thể:
+
+PENDING
+-> CANCELLED
+
+CONFIRMED
+-> Request Cancel
+
+DELIVERED
+-> Request Return
+
+==================================================
+6. ADMIN FLOW
+=============
+
+Admin nhận đơn
+
+PENDING
+|
+v
+CONFIRMED
+|
+v
+PACKING
+|
+v
+READY_TO_SHIP
+
+Sau đó hệ thống tạo đơn GHN.
+
+Nếu GHN trả thành công:
+
+ShippingStatus = CREATED
+
+Nếu GHN lỗi:
+
+Admin có thể tạo lại vận đơn.
+
+==================================================
+7. GHN WEBHOOK FLOW
+===================
+
+GHN
+|
+| webhook
+v
+/api/webhooks/ghn
+
+Ví dụ dữ liệu:
+
+{
+"order_code": "GHN123456",
+"status": "delivering"
+}
+
+Backend nhận webhook:
+
+Tìm Order theo shippingOrderCode
+
+GHN status:
+delivering
+
+Map sang:
+
+ShippingStatus.DELIVERING
+
+Nếu:
+
+ShippingStatus.DELIVERING
+
+thì:
+
+OrderStatus.SHIPPING
+
+Ví dụ:
+
+GHN:
+delivered
+
+=> ShippingStatus.DELIVERED
+=> OrderStatus.DELIVERED
+
+GHN:
+delivery_failed
+
+=> ShippingStatus.DELIVERY_FAILED
+=> OrderStatus.FAILED
+
+GHN:
+returned
+
+=> ShippingStatus.RETURNED
+=> OrderStatus.RETURNED
+
+==================================================
+8. ORDER STATUS HISTORY
+=======================
+
+Nên tạo thêm bảng:
+
+order_status_history
+
+id
+order_id
+old_status
+new_status
+changed_by
+changed_at
+note
+
+Ví dụ:
+
+1
+PENDING
+CONFIRMED
+[admin@gmail.com](mailto:admin@gmail.com)
+2026-06-23 10:00
+
+2
+CONFIRMED
+PACKING
+warehouse01
+2026-06-23 10:30
+
+3
+PACKING
+READY_TO_SHIP
+warehouse01
+2026-06-23 11:00
+
+4
+READY_TO_SHIP
+SHIPPING
+GHN
+2026-06-23 14:00
+
+5
+SHIPPING
+DELIVERED
+GHN
+2026-06-24 09:00
+
+Bảng này dùng để:
+
+* Tracking đơn hàng.
+* Hiển thị timeline cho khách.
+* Audit lịch sử thay đổi.
+* Debug khi có khiếu nại.
+
+==================================================
+
