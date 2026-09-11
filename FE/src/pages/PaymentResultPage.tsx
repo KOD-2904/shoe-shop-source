@@ -12,6 +12,7 @@ export function PaymentResultPage() {
   const transactionStatus = params.get("transactionStatus") || params.get("vnp_TransactionStatus");
   const orderId = params.get("orderId") || params.get("vnp_TxnRef");
   const paymentId = params.get("paymentId") || params.get("vnp_OrderInfo");
+  const redirectSuccess = code === "00" && transactionStatus === "00";
   const order = useQuery({
     queryKey: ["orders", orderId],
     queryFn: () => orderApi.byId(orderId!),
@@ -19,12 +20,13 @@ export function PaymentResultPage() {
     refetchInterval: (query) => (query.state.data?.paymentStatus === "UNPAID" ? 2000 : false),
     refetchOnWindowFocus: true
   });
+  const paymentSuccess = redirectSuccess || getPaymentStatus(order.data) === "PAID";
 
   return (
     <div className="narrow">
       <EmptyState
-        title="Ket qua thanh toan VNPAY"
-        detail="Trang nay chi nhan du lieu redirect. Trang thai thanh toan cuoi cung duoc lay tu chi tiet don hang sau khi VNPAY IPN cap nhat."
+        title={paymentSuccess ? "Đã thanh toán thành công đơn hàng" : "Ket qua thanh toan VNPAY"}
+        detail={paymentSuccess ? undefined : "Trang nay chi nhan du lieu redirect. Trang thai thanh toan cuoi cung duoc lay tu chi tiet don hang sau khi VNPAY IPN cap nhat."}
       />
       <Panel>
         <div className="info-grid one">

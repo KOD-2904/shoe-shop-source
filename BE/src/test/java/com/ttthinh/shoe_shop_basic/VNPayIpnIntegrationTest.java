@@ -1,34 +1,36 @@
 package com.ttthinh.shoe_shop_basic;
 
 import com.ttthinh.shoe_shop_basic.config.VNPayConfig;
-import com.ttthinh.shoe_shop_basic.dto.response.payment.VNPayProcessResult;
-import com.ttthinh.shoe_shop_basic.entity.auth.UserAccount;
-import com.ttthinh.shoe_shop_basic.entity.catalog.Product;
-import com.ttthinh.shoe_shop_basic.entity.catalog.ProductVariant;
-import com.ttthinh.shoe_shop_basic.entity.catalog.VariantSize;
-import com.ttthinh.shoe_shop_basic.entity.inventory.Inventory;
-import com.ttthinh.shoe_shop_basic.entity.order.Order;
-import com.ttthinh.shoe_shop_basic.entity.order.OrderItem;
-import com.ttthinh.shoe_shop_basic.entity.payment.Payment;
-import com.ttthinh.shoe_shop_basic.enums.AuthProvider;
-import com.ttthinh.shoe_shop_basic.enums.OrderStatus;
-import com.ttthinh.shoe_shop_basic.enums.PaymentMethod;
-import com.ttthinh.shoe_shop_basic.enums.PaymentStatus;
-import com.ttthinh.shoe_shop_basic.enums.ProductStatus;
-import com.ttthinh.shoe_shop_basic.enums.ShippingStatus;
-import com.ttthinh.shoe_shop_basic.enums.UserStatus;
-import com.ttthinh.shoe_shop_basic.repository.jpa.InventoryRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.OrderRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.PaymentRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.ProductRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.ProductVariantRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.UserAccountRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.VariantSizeRepository;
-import com.ttthinh.shoe_shop_basic.service.PaymentApplicationService;
-import com.ttthinh.shoe_shop_basic.utils.VNPayUtil;
+import com.ttthinh.shoe_shop_basic.payment.dto.response.VNPayProcessResult;
+import com.ttthinh.shoe_shop_basic.payment.dto.response.VNPayUrlResponse;
+import com.ttthinh.shoe_shop_basic.auth.entity.UserAccount;
+import com.ttthinh.shoe_shop_basic.catalog.entity.Product;
+import com.ttthinh.shoe_shop_basic.catalog.entity.ProductVariant;
+import com.ttthinh.shoe_shop_basic.catalog.entity.VariantSize;
+import com.ttthinh.shoe_shop_basic.inventory.entity.Inventory;
+import com.ttthinh.shoe_shop_basic.order.entity.Order;
+import com.ttthinh.shoe_shop_basic.order.entity.OrderItem;
+import com.ttthinh.shoe_shop_basic.payment.entity.Payment;
+import com.ttthinh.shoe_shop_basic.auth.enums.AuthProvider;
+import com.ttthinh.shoe_shop_basic.order.enums.OrderStatus;
+import com.ttthinh.shoe_shop_basic.payment.enums.PaymentMethod;
+import com.ttthinh.shoe_shop_basic.payment.enums.PaymentStatus;
+import com.ttthinh.shoe_shop_basic.catalog.enums.ProductStatus;
+import com.ttthinh.shoe_shop_basic.order.enums.ShippingStatus;
+import com.ttthinh.shoe_shop_basic.auth.enums.UserStatus;
+import com.ttthinh.shoe_shop_basic.inventory.repository.InventoryRepository;
+import com.ttthinh.shoe_shop_basic.order.repository.OrderRepository;
+import com.ttthinh.shoe_shop_basic.payment.repository.PaymentRepository;
+import com.ttthinh.shoe_shop_basic.catalog.repository.ProductRepository;
+import com.ttthinh.shoe_shop_basic.catalog.repository.ProductVariantRepository;
+import com.ttthinh.shoe_shop_basic.auth.repository.UserAccountRepository;
+import com.ttthinh.shoe_shop_basic.catalog.repository.VariantSizeRepository;
+import com.ttthinh.shoe_shop_basic.payment.service.PaymentApplicationService;
+import com.ttthinh.shoe_shop_basic.payment.util.VNPayUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
@@ -42,7 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ActiveProfiles("test")
-@SpringBootTest(properties = "vnpay.hash-secret=test-vnpay-secret")
+@SpringBootTest(properties = {
+        "vnpay.hash-secret=test-vnpay-secret",
+        "vnpay.tmn-code=TEST"
+})
 class VNPayIpnIntegrationTest {
     @Autowired
     private PaymentApplicationService paymentApplicationService;
@@ -72,9 +77,33 @@ class VNPayIpnIntegrationTest {
     private PaymentRepository paymentRepository;
 
     @Test
+    void createPaymentUrlUsesPaymentTxnRefAndReusesCurrentUrl() {
+        TestOrder testOrder = createPendingVNPayOrder(BigDecimal.valueOf(100000), 1);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("127.0.0.1");
+
+        VNPayUrlResponse first = paymentApplicationService.createVNPayPayment(
+                testOrder.order().getUser(),
+                testOrder.order().getId(),
+                request
+        );
+        VNPayUrlResponse second = paymentApplicationService.createVNPayPayment(
+                testOrder.order().getUser(),
+                testOrder.order().getId(),
+                request
+        );
+
+        Payment payment = paymentRepository.findById(testOrder.payment().getId()).orElseThrow();
+
+        assertEquals(first.getPaymentUrl(), second.getPaymentUrl());
+        assertTrue(first.getPaymentUrl().contains("vnp_TxnRef=" + payment.getVnpTxnRef()));
+        assertFalse(first.getPaymentUrl().contains("vnp_TxnRef=" + testOrder.order().getId()));
+    }
+
+    @Test
     void duplicateSuccessIpnDoesNotDeductLockedInventoryTwice() {
         TestOrder testOrder = createPendingVNPayOrder(BigDecimal.valueOf(100000), 2);
-        Map<String, String> params = signedSuccessIpn(testOrder.order().getId(), testOrder.payment().getId(), "vnp-txn-1", 200000);
+        Map<String, String> params = signedSuccessIpn(testOrder.payment().getVnpTxnRef(), "vnp-txn-1", 200000);
 
         VNPayProcessResult first = paymentApplicationService.handleVNPayIpn(params);
         VNPayProcessResult duplicate = paymentApplicationService.handleVNPayIpn(params);
@@ -92,6 +121,27 @@ class VNPayIpnIntegrationTest {
         assertEquals(OrderStatus.CONFIRMED, order.getStatus());
         assertEquals(8, inventory.getQuantity());
         assertEquals(0, inventory.getQuantityLocked());
+    }
+
+    @Test
+    void successfulIpnAfterLocalTimeoutRequestsRetryInsteadOfMarkingProcessed() {
+        TestOrder testOrder = createPendingVNPayOrder(BigDecimal.valueOf(100000), 1);
+        Payment payment = testOrder.payment();
+        payment.setStatus(PaymentStatus.FAILED);
+        payment.setFailureReason("Payment timeout");
+        paymentRepository.save(payment);
+        Map<String, String> params = signedSuccessIpn(payment.getVnpTxnRef(), "vnp-txn-timeout", 100000);
+
+        VNPayProcessResult result = paymentApplicationService.handleVNPayIpn(params);
+
+        assertFalse(result.isProcessed());
+        assertEquals("99", result.getRspCode());
+
+        Payment savedPayment = paymentRepository.findById(payment.getId()).orElseThrow();
+        Order order = orderRepository.findById(testOrder.order().getId()).orElseThrow();
+
+        assertEquals(PaymentStatus.FAILED, savedPayment.getStatus());
+        assertEquals(OrderStatus.PENDING, order.getStatus());
     }
 
     private TestOrder createPendingVNPayOrder(BigDecimal amount, int quantity) {
@@ -156,22 +206,23 @@ class VNPayIpnIntegrationTest {
                 .method(PaymentMethod.VNPAY)
                 .status(PaymentStatus.UNPAID)
                 .amount(amount.multiply(BigDecimal.valueOf(quantity)))
+                .vnpTxnRef("PAY" + System.nanoTime())
                 .build());
 
         return new TestOrder(order, payment, variantSize);
     }
 
-    private Map<String, String> signedSuccessIpn(String orderId, String paymentId, String transactionNo, long amount) {
+    private Map<String, String> signedSuccessIpn(String txnRef, String transactionNo, long amount) {
         Map<String, String> params = new HashMap<>();
         params.put("vnp_TmnCode", "TEST");
         params.put("vnp_Amount", String.valueOf(amount * 100));
         params.put("vnp_BankCode", "NCB");
         params.put("vnp_BankTranNo", "bank-" + transactionNo);
         params.put("vnp_CardType", "ATM");
-        params.put("vnp_OrderInfo", paymentId);
+        params.put("vnp_OrderInfo", "Thanh toan don hang");
         params.put("vnp_PayDate", "20260908120000");
         params.put("vnp_ResponseCode", "00");
-        params.put("vnp_TxnRef", orderId);
+        params.put("vnp_TxnRef", txnRef);
         params.put("vnp_TransactionNo", transactionNo);
         params.put("vnp_TransactionStatus", "00");
 

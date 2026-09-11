@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(exclude = DataRedisRepositoriesAutoConfiguration.class)
 @EnableScheduling
-@EnableJpaRepositories(basePackages = "com.ttthinh.shoe_shop_basic.repository.jpa")
+@EnableJpaRepositories(basePackages = "com.ttthinh.shoe_shop_basic")
 public class ShoeShopBasicApplication {
 
     public static void main(String[] args) {

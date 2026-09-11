@@ -52,6 +52,9 @@ export function LoginPage() {
         <Field label="Password">
           <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         </Field>
+        <p className="muted align-right">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         <Button loading={loading} type="submit">
           Login
         </Button>

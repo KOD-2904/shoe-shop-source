@@ -3,6 +3,7 @@
 Thumbs.db
 .idea/
 .vscode/
+.agents/
 
 # Environment files
 .env

@@ -22,6 +22,18 @@ export const authApi = {
     const { data } = await api.post<ApiResponse<unknown>>("/auth/log-out", body ?? {});
     return data;
   },
+  changePassword: async (body: { currentPassword: string; newPassword: string }) => {
+    const { data } = await api.post<ApiResponse<unknown>>("/auth/change-password", body);
+    return data;
+  },
+  forgotPassword: async (body: { email: string }) => {
+    const { data } = await api.post<ApiResponse<unknown>>("/auth/forgot-password", body);
+    return data;
+  },
+  resetPassword: async (body: { token: string; newPassword: string }) => {
+    const { data } = await api.post<ApiResponse<unknown>>("/auth/reset-password", body);
+    return data;
+  },
   addAddress: async (body: AddressRequest) => {
     const { data } = await api.post<ApiResponse<unknown>>("/address/add", body);
     return unwrap<unknown>(data);

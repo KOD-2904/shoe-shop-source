@@ -1,13 +1,13 @@
 package com.ttthinh.shoe_shop_basic.config;
 
-import com.ttthinh.shoe_shop_basic.entity.auth.Permission;
-import com.ttthinh.shoe_shop_basic.entity.auth.Role;
-import com.ttthinh.shoe_shop_basic.entity.auth.UserAccount;
-import com.ttthinh.shoe_shop_basic.enums.AuthProvider;
-import com.ttthinh.shoe_shop_basic.enums.UserStatus;
-import com.ttthinh.shoe_shop_basic.repository.jpa.PermissionRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.RoleRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.UserAccountRepository;
+import com.ttthinh.shoe_shop_basic.auth.entity.Permission;
+import com.ttthinh.shoe_shop_basic.auth.entity.Role;
+import com.ttthinh.shoe_shop_basic.auth.entity.UserAccount;
+import com.ttthinh.shoe_shop_basic.auth.enums.AuthProvider;
+import com.ttthinh.shoe_shop_basic.auth.enums.UserStatus;
+import com.ttthinh.shoe_shop_basic.auth.repository.PermissionRepository;
+import com.ttthinh.shoe_shop_basic.auth.repository.RoleRepository;
+import com.ttthinh.shoe_shop_basic.auth.repository.UserAccountRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -74,10 +74,11 @@ public class ApplicationInitConfig {
                 userAccountRepository.findByEmail(adminEmail).ifPresent(admin -> {
                     admin.getRoles().add(roleAdmin);
                     admin.getRoles().add(roleUser);
+                    admin.addProvider(AuthProvider.LOCAL);
                     admin.setStatus(UserStatus.ACTIVE);
                     admin.setEmailVerified(true);
                     userAccountRepository.save(admin);
-                    log.info("Ensured initial admin user has admin roles: {}", adminEmail);
+                    log.info("Ensured initial admin user has admin roles and local provider: {}", adminEmail);
                 });
             }
 
@@ -97,7 +98,11 @@ public class ApplicationInitConfig {
                 userAccountRepository.save(user);
                 log.info("Created initial demo user with email: {}", demoEmail);
             } else {
-                log.info("Initial demo user already exists");
+                userAccountRepository.findByEmail(demoEmail).ifPresent(user -> {
+                    user.addProvider(AuthProvider.LOCAL);
+                    userAccountRepository.save(user);
+                    log.info("Ensured initial demo user has local provider: {}", demoEmail);
+                });
             }
 
             log.info("===== DATABASE INITIALIZATION COMPLETED =====");

@@ -36,9 +36,11 @@ export function CheckoutPage() {
     if (buyNowIntent) return buyNowIntent.unitPrice * buyNowIntent.quantity;
     return cart.data?.items.filter((item) => selected.includes(item.cartItemId)).reduce((sum, item) => sum + item.lineTotal, 0) ?? 0;
   }, [buyNowIntent, cart.data?.items, selected]);
+  const backendProductTotal = preview?.productTotal ?? selectedTotal;
   const hasAddresses = Boolean(addresses.data?.length);
   const previewExpired = preview?.expiresAt ? new Date(preview.expiresAt).getTime() <= Date.now() : false;
   const hasCheckoutItems = isBuyNow ? Boolean(buyNowIntent) : selected.length > 0;
+  const normalizedVoucherCode = voucherCode.trim();
   const addressComplete = Boolean(
     selectedAddress?.receiverName &&
       selectedAddress?.phoneNumber &&
@@ -70,7 +72,7 @@ export function CheckoutPage() {
           quantity: buyNowIntent.quantity,
           addressId: effectiveAddressId,
           paymentMethod,
-          voucherCode: voucherCode.trim() || undefined
+          voucherCode: normalizedVoucherCode || undefined
         });
       }
       return checkoutApi.preview({
@@ -86,7 +88,7 @@ export function CheckoutPage() {
           height: 12,
           insuranceValue: selectedTotal
         },
-        voucherCode: voucherCode.trim() || undefined
+        voucherCode: normalizedVoucherCode || undefined
       });
     },
     onSuccess: (nextPreview) => {
@@ -97,10 +99,10 @@ export function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (isBuyNow && buyNowIntent && effectiveAddressId && addressComplete && !preview && !createPreview.isPending) {
+    if (isBuyNow && buyNowIntent && effectiveAddressId && addressComplete && !normalizedVoucherCode && !preview && !createPreview.isPending) {
       createPreview.mutate();
     }
-  }, [addressComplete, buyNowIntent, createPreview, effectiveAddressId, isBuyNow, preview]);
+  }, [addressComplete, buyNowIntent, effectiveAddressId, isBuyNow, normalizedVoucherCode, preview, createPreview.isPending]);
 
   const createOrder = useMutation({
     mutationFn: () => {
@@ -112,7 +114,7 @@ export function CheckoutPage() {
           addressId: preview.addressId,
           shippingFeeSnapshotId: preview.shippingFeeSnapshotId,
           paymentMethod,
-          voucherCode: voucherCode.trim() || undefined,
+          voucherCode: normalizedVoucherCode || undefined,
           note
         });
       }
@@ -121,7 +123,7 @@ export function CheckoutPage() {
         addressId: preview.addressId,
         shippingFeeSnapshotId: preview.shippingFeeSnapshotId,
         paymentMethod,
-        voucherCode: voucherCode.trim() || undefined,
+        voucherCode: normalizedVoucherCode || undefined,
         note
       });
     },
@@ -155,7 +157,7 @@ export function CheckoutPage() {
             {buyNowIntent ? (
               <div className="check-row">
                 <span>{buyNowIntent.productName}{buyNowIntent.variantLabel ? ` - ${buyNowIntent.variantLabel}` : ""} x {buyNowIntent.quantity}</span>
-                <Price value={selectedTotal} />
+                <Price value={backendProductTotal} />
               </div>
             ) : null}
             {!isBuyNow ? cart.data?.items.map((item) => (
@@ -206,10 +208,10 @@ export function CheckoutPage() {
             </Field>
           </div>
           <div className="summary">
-            <div><span>Products</span><Price value={selectedTotal} /></div>
+            <div><span>Products</span><Price value={backendProductTotal} /></div>
             <div><span>Shipping</span><Price value={preview?.shippingFee} /></div>
             <div><span>Discount{preview?.voucherCode ? ` (${preview.voucherCode})` : ""}</span><Price value={preview?.discountAmount} /></div>
-            <div><strong>Total</strong><Price value={preview?.totalAmount ?? selectedTotal} /></div>
+            <div><strong>Total</strong><Price value={preview?.totalAmount ?? backendProductTotal} /></div>
           </div>
           {preview ? (
             <div className={previewExpired ? "inline-error" : "selection-summary"}>
@@ -218,12 +220,9 @@ export function CheckoutPage() {
             </div>
           ) : null}
           <div className="button-row">
-            {!isBuyNow ? (
-              <Button type="button" variant="secondary" loading={createPreview.isPending} onClick={() => createPreview.mutate()} disabled={!selected.length || !effectiveAddressId || !addressComplete}>
-                Preview total
-              </Button>
-            ) : null}
-            {isBuyNow && createPreview.isPending ? <Button type="button" variant="secondary" loading disabled>Dang tinh shipping</Button> : null}
+            <Button type="button" variant="secondary" loading={createPreview.isPending} onClick={() => createPreview.mutate()} disabled={!hasCheckoutItems || !effectiveAddressId || !addressComplete}>
+              Preview total
+            </Button>
             <Button type="submit" loading={createOrder.isPending} disabled={!canCreateOrder}>
               Place order
             </Button>

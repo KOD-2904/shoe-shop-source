@@ -1,10 +1,34 @@
+import { FormEvent, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Heart, MapPin, Package, UserRound } from "lucide-react";
-import { PageHeader, Panel, StatusBadge } from "../components/ui";
+import { Heart, KeyRound, MapPin, Package, UserRound } from "lucide-react";
+import { authApi } from "../api/authApi";
+import { getApiError } from "../api/client";
+import { Button, Field, Input, PageHeader, Panel, StatusBadge } from "../components/ui";
 import { useAuth } from "../state/AuthContext";
+import { useToast } from "../state/ToastContext";
 
 export function AccountPage() {
   const { user } = useAuth();
+  const toast = useToast();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const canChangePassword = user?.providers?.includes("local");
+
+  const submitPasswordChange = async (event: FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    try {
+      await authApi.changePassword({ currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      toast.success("Password da duoc cap nhat");
+    } catch (error) {
+      toast.error(getApiError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="account-page">
@@ -29,6 +53,35 @@ export function AccountPage() {
           <h2>Dia chi nhan hang</h2>
           <p className="muted">Quan ly ten nguoi nhan, so dien thoai va dia chi giao hang.</p>
           <Link className="btn btn-primary" to="/addresses">Quan ly dia chi</Link>
+        </Panel>
+        <Panel className="account-action-panel">
+          <h2>Password</h2>
+          {canChangePassword ? (
+            <form className="stack-form" onSubmit={submitPasswordChange}>
+              <Field label="Current password">
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  required
+                />
+              </Field>
+              <Field label="New password">
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  required
+                  minLength={8}
+                />
+              </Field>
+              <Button loading={loading} type="submit">
+                <KeyRound size={16} /> Change password
+              </Button>
+            </form>
+          ) : (
+            <p className="muted">Tai khoan nay dang dung Google login nen khong co password local de doi.</p>
+          )}
         </Panel>
       </div>
     </div>

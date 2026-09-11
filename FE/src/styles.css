@@ -151,6 +151,9 @@ img { max-width: 100%; }
   border: 1px solid var(--border); background: var(--surface-soft); padding: 12px 14px; border-radius: var(--radius-sm);
 }
 .notice { border-color: rgba(20, 122, 80, .22); background: var(--success-soft); color: var(--success); }
+.notice.danger { border-color: rgba(179, 38, 59, .22); background: var(--danger-soft); color: var(--danger); }
+.align-right { text-align: right; }
+.stack-form { display: grid; gap: 14px; }
 .inline-error, .inline-alert-error { border-color: rgba(179, 38, 59, .22); background: var(--danger-soft); color: var(--danger); }
 .inline-alert-warning { border-color: rgba(154, 98, 0, .25); background: var(--warning-soft); color: var(--warning); }
 .inline-alert-success { border-color: rgba(20, 122, 80, .22); background: var(--success-soft); color: var(--success); }

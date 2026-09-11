@@ -1,12 +1,12 @@
 package com.ttthinh.shoe_shop_basic;
 
-import com.ttthinh.shoe_shop_basic.entity.promotion.Voucher;
-import com.ttthinh.shoe_shop_basic.enums.VoucherType;
-import com.ttthinh.shoe_shop_basic.exception.AppException;
-import com.ttthinh.shoe_shop_basic.exception.ErrorCode;
-import com.ttthinh.shoe_shop_basic.repository.jpa.VoucherRepository;
-import com.ttthinh.shoe_shop_basic.repository.jpa.VoucherUsageRepository;
-import com.ttthinh.shoe_shop_basic.service.VoucherService;
+import com.ttthinh.shoe_shop_basic.promotion.entity.Voucher;
+import com.ttthinh.shoe_shop_basic.promotion.enums.VoucherType;
+import com.ttthinh.shoe_shop_basic.common.exception.AppException;
+import com.ttthinh.shoe_shop_basic.common.exception.ErrorCode;
+import com.ttthinh.shoe_shop_basic.promotion.repository.VoucherRepository;
+import com.ttthinh.shoe_shop_basic.promotion.repository.VoucherUsageRepository;
+import com.ttthinh.shoe_shop_basic.promotion.service.VoucherService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

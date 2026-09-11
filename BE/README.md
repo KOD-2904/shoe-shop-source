@@ -32,20 +32,26 @@ Spring Boot backend for a shoe e-commerce system with authentication, product ca
 
 ```text
 src/main/java/com/ttthinh/shoe_shop_basic
+|-- auth
+|-- cart
+|-- catalog
+|-- chat
+|-- checkout
+|-- common
 |-- config
-|-- controller
-|-- dto
-|   |-- request
-|   `-- response
-|-- entity
-|-- enums
-|-- exception
-|-- mapper
-|-- repository
-|-- security
-|-- service
-`-- validation
+|-- customer
+|-- inventory
+|-- media
+|-- order
+|-- payment
+|-- promotion
+`-- shipping
 ```
+
+The backend uses a feature-first package layout. Each business module owns its
+controller, DTOs, entity, repository, mapper, service, and implementation classes
+where applicable. Shared API response, pagination, base entity, exceptions, and
+utility classes live under `common`.
 
 ## Environment Setup
 

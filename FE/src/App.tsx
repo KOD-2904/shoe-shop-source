@@ -3,6 +3,8 @@ import { AppLayout } from "./layout/AppLayout";
 import { useAuth } from "./state/AuthContext";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { OAuth2SuccessPage } from "./pages/OAuth2SuccessPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { StorefrontPage } from "./pages/StorefrontPage";
@@ -46,6 +48,8 @@ export function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/oauth2/success" element={<OAuth2SuccessPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route element={<AppLayout />}>

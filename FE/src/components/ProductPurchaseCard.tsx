@@ -67,7 +67,7 @@ export function ProductPurchaseCard({
       productName: product.name,
       variantLabel: [selectedVariant?.color, selectedSize.size].filter(Boolean).join(" / "),
       imageUrl,
-      unitPrice: selectedSize.price || product.basePrice
+      unitPrice: displayPrice
     });
     navigate("/checkout?mode=buy-now");
   };

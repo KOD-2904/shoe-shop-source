@@ -1,9 +1,9 @@
 package com.ttthinh.shoe_shop_basic.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ttthinh.shoe_shop_basic.security.auth.RefreshTokenRateLimitFilter;
-import com.ttthinh.shoe_shop_basic.security.jwt.JwtAuthenticationFilter;
-import com.ttthinh.shoe_shop_basic.security.oauth2.OAuth2SuccessHandler;
+import com.ttthinh.shoe_shop_basic.auth.security.auth.RefreshTokenRateLimitFilter;
+import com.ttthinh.shoe_shop_basic.auth.security.jwt.JwtAuthenticationFilter;
+import com.ttthinh.shoe_shop_basic.auth.security.oauth2.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +31,8 @@ public class SecurityConfig {
             "/auth/introspect",
             "/auth/log-out",
             "/auth/refreshToken",
+            "/auth/forgot-password",
+            "/auth/reset-password",
             "/register"
     };
 
