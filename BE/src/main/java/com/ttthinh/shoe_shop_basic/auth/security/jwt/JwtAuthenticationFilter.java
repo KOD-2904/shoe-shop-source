@@ -91,6 +91,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if ("GET".equalsIgnoreCase(method) && "/auth/verify-email".equals(requestPath)) {
             return true;
         }
+        if ("GET".equalsIgnoreCase(method) && "/api/keepalive".equals(requestPath)) {
+            return true;
+        }
         if ("GET".equalsIgnoreCase(method) && requestPath.startsWith("/api/ghn/")) {
             return true;
         }

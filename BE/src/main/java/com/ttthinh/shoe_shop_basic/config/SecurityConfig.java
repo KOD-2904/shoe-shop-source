@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/verify-email").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/keepalive").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ghn/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/webhooks/ghn").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/getProducts", "/products/getProduct", "/variants", "/variants/product/**").permitAll()

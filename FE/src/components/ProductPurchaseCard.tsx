@@ -117,10 +117,12 @@ export function ProductPurchaseCard({
             {mode === "detail" ? <StatusBadge value={product.status} /> : null}
           </div>
           <p className="product-variant-line">{variantLabel}</p>
-          <div className="row-between">
-            <Price value={displayPrice} />
-            {onSale ? <span className="old-price">{formatMoney(originalPrice)}</span> : null}
-            {onSale && (selectedSize?.discountPercent || product.discountPercent) ? <StatusBadge value={`SALE_${selectedSize?.discountPercent || product.discountPercent}%`} /> : null}
+          <div className="product-meta-row">
+            <div className="product-price-line">
+              <Price value={displayPrice} />
+              {onSale ? <span className="old-price">{formatMoney(originalPrice)}</span> : null}
+              {onSale && (selectedSize?.discountPercent || product.discountPercent) ? <StatusBadge value={`SALE_${selectedSize?.discountPercent || product.discountPercent}%`} /> : null}
+            </div>
             {selectedSize ? <span className={`stock-text ${isLowStock ? "stock-low" : ""}`}>{isLowStock ? "Low stock" : `${selectedSize.quantity} in stock`}</span> : <span className="stock-text stock-out">Out of stock</span>}
           </div>
           {mode === "detail" && product.description ? <p className="product-description">{product.description}</p> : null}
