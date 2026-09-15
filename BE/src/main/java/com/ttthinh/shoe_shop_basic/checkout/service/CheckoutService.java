@@ -32,7 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -85,7 +87,7 @@ public class CheckoutService {
                 .discountAmount(snapshot.getDiscountAmount())
                 .voucherCode(snapshot.getVoucherCode())
                 .totalAmount(snapshot.getTotalAmount())
-                .expiresAt(snapshot.getExpiresAt())
+                .expiresAt(toInstant(snapshot.getExpiresAt()))
                 .build();
     }
 
@@ -139,8 +141,12 @@ public class CheckoutService {
                 .discountAmount(snapshot.getDiscountAmount())
                 .voucherCode(snapshot.getVoucherCode())
                 .totalAmount(snapshot.getTotalAmount())
-                .expiresAt(snapshot.getExpiresAt())
+                .expiresAt(toInstant(snapshot.getExpiresAt()))
                 .build();
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.atZone(ZoneId.systemDefault()).toInstant();
     }
 
     public Address resolveAddress(UserAccount user, String addressId) {

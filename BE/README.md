@@ -60,12 +60,15 @@ Create a local `.env` or set environment variables based on `.env.example`.
 Important variables:
 
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+- `APP_TIME_ZONE` defaults to `Asia/Ho_Chi_Minh`; keep VNPAY/GHN/business time on this zone
 - `JWT_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`
 - `ALLOWED_ORIGINS`
+- `ALLOWED_ORIGIN_PATTERNS` for temporary preview origins such as `https://*.vercel.app`
 - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 - `GHN_TOKEN`, `GHN_SHOP_ID`
 - `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_RETURN_URL`, `VNPAY_IPN_URL`
+- `VNPAY_TIME_ZONE` defaults to `Asia/Ho_Chi_Minh`, `VNPAY_PAYMENT_TIMEOUT_MINUTES` defaults to `15`
 
 Do not commit real secrets. Use `.env.example` for placeholders only.
 

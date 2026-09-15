@@ -9,7 +9,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -25,5 +25,5 @@ public class CheckoutPreviewResponse {
     BigDecimal discountAmount;
     String voucherCode;
     BigDecimal totalAmount;
-    LocalDateTime expiresAt;
+    Instant expiresAt;
 }

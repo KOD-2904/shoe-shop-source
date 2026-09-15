@@ -1,13 +1,12 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import { API_BASE_URL } from "../config/env";
 import { tokenStorage } from "../lib/storage";
 import type { ApiResponse, TokenResponse } from "../types";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 type RetryConfig = AxiosRequestConfig & { _retry?: boolean };
 let refreshPromise: Promise<TokenResponse> | null = null;
 
-export const api = axios.create({ baseURL, withCredentials: true });
+export const api = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
 
 export function unwrap<T>(data: ApiResponse<T> | T): T {
   if (data && typeof data === "object" && "result" in data) {
@@ -27,7 +26,7 @@ export function getApiError(error: unknown): string {
 export async function refreshTokens() {
   if (!refreshPromise) {
     refreshPromise = axios
-      .post<ApiResponse<TokenResponse> | TokenResponse>(`${baseURL}/auth/refreshToken`, null, { withCredentials: true })
+      .post<ApiResponse<TokenResponse> | TokenResponse>(`${API_BASE_URL}/auth/refreshToken`, null, { withCredentials: true })
       .then((response) => {
         const tokens = unwrap<TokenResponse>(response.data);
         tokenStorage.setAccessToken(tokens.accessToken);

@@ -11,7 +11,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -28,6 +28,6 @@ public class ProductDiscountResponse {
     BigDecimal value;
     BigDecimal maxDiscountAmount;
     Boolean active;
-    LocalDateTime startsAt;
-    LocalDateTime endsAt;
+    Instant startsAt;
+    Instant endsAt;
 }

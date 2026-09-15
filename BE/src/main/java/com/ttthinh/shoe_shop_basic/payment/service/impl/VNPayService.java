@@ -12,6 +12,10 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +23,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class VNPayService {
+    private static final DateTimeFormatter VNPAY_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
     private final VNPayConfig vnPayConfig;
+    private final ZoneId appZoneId;
     // SỬA method lấy IP trong controller
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
@@ -56,8 +63,10 @@ public class VNPayService {
                 ? request.getTxnRef()
                 : VNPayUtil.generateTransactionCode();
 
-        String createDate = getCurrentDate();
-        String expireDate = getExpireDate(); // Hết hạn sau 15 phút
+        ZoneId vnpayZone = resolveVnpayZone();
+        ZonedDateTime now = ZonedDateTime.now(vnpayZone);
+        String createDate = now.format(VNPAY_DATE);
+        String expireDate = now.plusMinutes(paymentTimeoutMinutes()).format(VNPAY_DATE);
 
         Map<String, String> params = new HashMap<>();
         params.put("vnp_Version", vnPayConfig.getVersion());
@@ -74,8 +83,9 @@ public class VNPayService {
         params.put("vnp_IpAddr", getClientIp(httpServletRequest));
         params.put("vnp_CreateDate", createDate);
         params.put("vnp_ExpireDate", expireDate);
-        log.info("Creating VNPay URL for orderId={}, paymentId={}, txnRef={}, amount={}, returnUrl={}, configuredIpnUrl={}",
-                request.getOrderId(), request.getPaymentId(), txnRef, request.getAmount(), vnPayConfig.getReturnUrl(), vnPayConfig.getIpnUrl());
+        log.info("Creating VNPay URL for orderId={}, paymentId={}, txnRef={}, amount={}, returnUrl={}, configuredIpnUrl={}, timeZone={}, createDate={}, expireDate={}",
+                request.getOrderId(), request.getPaymentId(), txnRef, request.getAmount(), vnPayConfig.getReturnUrl(),
+                vnPayConfig.getIpnUrl(), vnpayZone, createDate, expireDate);
 
         String[] buildData = VNPayUtil.buildQuery(params).split("\\|\\|");
         String hashData = buildData[0];
@@ -112,23 +122,20 @@ public class VNPayService {
                 .trim();
     }
 
-    /**
-     * Lấy thời gian hiện tại theo format VNPAY (yyyyMMddHHmmss)
-     */
-    private String getCurrentDate() {
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        java.time.format.DateTimeFormatter formatter =
-                java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        return now.format(formatter);
+    private long paymentTimeoutMinutes() {
+        return vnPayConfig.getPaymentTimeoutMinutes() > 0 ? vnPayConfig.getPaymentTimeoutMinutes() : 15;
     }
 
-    // Thêm method tính expire date
-    private String getExpireDate() {
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        java.time.LocalDateTime expire = now.plusMinutes(15);
-        java.time.format.DateTimeFormatter formatter =
-                java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        return expire.format(formatter);
+    private ZoneId resolveVnpayZone() {
+        String timeZone = vnPayConfig.getTimeZone();
+        if (!StringUtils.hasText(timeZone)) {
+            return appZoneId;
+        }
+        try {
+            return ZoneId.of(timeZone.trim());
+        } catch (DateTimeException exception) {
+            throw new IllegalStateException("Invalid vnpay.time-zone: " + timeZone, exception);
+        }
     }
 
     // Helper method bỏ dấu tiếng Việt

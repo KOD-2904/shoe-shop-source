@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -60,8 +62,8 @@ public class ProductDiscountServiceImpl implements ProductDiscountService {
                 .value(request.getValue())
                 .maxDiscountAmount(request.getMaxDiscountAmount())
                 .active(request.getActive() == null || request.getActive())
-                .startsAt(request.getStartsAt())
-                .endsAt(request.getEndsAt())
+                .startsAt(toLocalDateTime(request.getStartsAt()))
+                .endsAt(toLocalDateTime(request.getEndsAt()))
                 .build();
         validate(discount);
         return toResponse(discountRepository.save(discount));
@@ -173,8 +175,16 @@ public class ProductDiscountServiceImpl implements ProductDiscountService {
                 .value(discount.getValue())
                 .maxDiscountAmount(discount.getMaxDiscountAmount())
                 .active(discount.getActive())
-                .startsAt(discount.getStartsAt())
-                .endsAt(discount.getEndsAt())
+                .startsAt(toInstant(discount.getStartsAt()))
+                .endsAt(toInstant(discount.getEndsAt()))
                 .build();
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneId.systemDefault());
+    }
+
+    private Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.atZone(ZoneId.systemDefault()).toInstant();
     }
 }

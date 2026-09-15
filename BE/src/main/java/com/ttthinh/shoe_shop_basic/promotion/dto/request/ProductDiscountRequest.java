@@ -15,7 +15,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -47,6 +47,6 @@ public class ProductDiscountRequest {
     @Builder.Default
     Boolean active = true;
 
-    LocalDateTime startsAt;
-    LocalDateTime endsAt;
+    Instant startsAt;
+    Instant endsAt;
 }

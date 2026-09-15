@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config/env";
+
 const GOOGLE_RETURN_TO_KEY = "shoe_shop_google_return_to";
 const GOOGLE_CALLBACK_STARTED_KEY = "shoe_shop_google_callback_started";
 
@@ -21,6 +23,5 @@ export function beginGoogleCallbackOnce() {
 export function buildGoogleAuthUrl(returnTo = "/") {
   sessionStorage.setItem(GOOGLE_RETURN_TO_KEY, returnTo);
   sessionStorage.removeItem(GOOGLE_CALLBACK_STARTED_KEY);
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-  return `${apiBaseUrl}/oauth2/authorization/google`;
+  return `${API_BASE_URL}/oauth2/authorization/google`;
 }

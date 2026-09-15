@@ -9,6 +9,8 @@ import { formatDate } from "../../lib/format";
 import { useToast } from "../../state/ToastContext";
 import type { PromotionTargetType, VoucherType } from "../../types";
 
+const toApiDateTime = (value: string) => (value ? new Date(value).toISOString() : undefined);
+
 export function AdminProductDiscountsPage() {
   const [query, setQuery] = useState("");
   const [name, setName] = useState("");
@@ -50,8 +52,8 @@ export function AdminProductDiscountsPage() {
       type,
       value,
       maxDiscountAmount: maxDiscountAmount || undefined,
-      startsAt: startsAt || undefined,
-      endsAt: endsAt || undefined,
+      startsAt: toApiDateTime(startsAt),
+      endsAt: toApiDateTime(endsAt),
       active
     }),
     onSuccess: async () => {

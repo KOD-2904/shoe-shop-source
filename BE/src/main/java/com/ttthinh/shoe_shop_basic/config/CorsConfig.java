@@ -12,17 +12,24 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
-    @Value("${cors.allowed-origins}")
+    @Value("${cors.allowed-origins:}")
     private String allowedOrigins;
+
+    @Value("${cors.allowed-origin-patterns:}")
+    private String allowedOriginPatterns;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(origin -> !origin.isBlank())
-                .toList());
+        List<String> origins = parseCsv(allowedOrigins);
+        List<String> originPatterns = parseCsv(allowedOriginPatterns);
+        if (!origins.isEmpty()) {
+            config.setAllowedOrigins(origins);
+        }
+        if (!originPatterns.isEmpty()) {
+            config.setAllowedOriginPatterns(originPatterns);
+        }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
@@ -31,5 +38,12 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    private List<String> parseCsv(String value) {
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .toList();
     }
 }

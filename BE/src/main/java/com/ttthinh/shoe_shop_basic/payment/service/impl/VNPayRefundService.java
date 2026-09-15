@@ -17,7 +17,9 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +34,7 @@ public class VNPayRefundService {
 
     private final VNPayConfig config;
     private final RestClient restClient;
+    private final ZoneId appZoneId;
 
     public void refundFull(Payment payment, String reason) {
         if (payment == null || payment.getMethod() != PaymentMethod.VNPAY
@@ -49,7 +52,8 @@ public class VNPayRefundService {
         String requestId = payment.getRefundRequestId() != null
                 ? payment.getRefundRequestId()
                 : payment.getId().replace("-", "");
-        String createDate = LocalDateTime.now().format(VNPAY_DATE);
+        ZoneId vnpayZone = resolveVnpayZone();
+        String createDate = LocalDateTime.now(vnpayZone).format(VNPAY_DATE);
 
         Map<String, String> body = new LinkedHashMap<>();
         body.put("vnp_RequestId", requestId);
@@ -81,7 +85,7 @@ public class VNPayRefundService {
             log.info("VNPAY refund accepted paymentId={}, transactionStatus={}", payment.getId(), transactionStatus);
             payment.setRefundRequestId(requestId);
             payment.setRefundTransactionId(value(response, "vnp_TransactionNo"));
-            payment.setRefundedAt(LocalDateTime.now());
+            payment.setRefundedAt(LocalDateTime.now(vnpayZone));
             payment.setStatus(PaymentStatus.REFUNDED);
         } catch (AppException exception) {
             throw exception;
@@ -129,6 +133,18 @@ public class VNPayRefundService {
                 body.get("vnp_TxnRef"), body.get("vnp_Amount"), body.get("vnp_TransactionNo"),
                 body.get("vnp_TransactionDate"), body.get("vnp_CreateBy"), body.get("vnp_CreateDate"),
                 body.get("vnp_IpAddr"), body.get("vnp_OrderInfo"));
+    }
+
+    private ZoneId resolveVnpayZone() {
+        String timeZone = config.getTimeZone();
+        if (timeZone == null || timeZone.isBlank()) {
+            return appZoneId;
+        }
+        try {
+            return ZoneId.of(timeZone.trim());
+        } catch (DateTimeException exception) {
+            throw new IllegalStateException("Invalid vnpay.time-zone: " + timeZone, exception);
+        }
     }
 
     private String normalize(String reason) {

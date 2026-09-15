@@ -34,6 +34,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,6 +99,34 @@ class VNPayIpnIntegrationTest {
         assertEquals(first.getPaymentUrl(), second.getPaymentUrl());
         assertTrue(first.getPaymentUrl().contains("vnp_TxnRef=" + payment.getVnpTxnRef()));
         assertFalse(first.getPaymentUrl().contains("vnp_TxnRef=" + testOrder.order().getId()));
+    }
+
+    @Test
+    void expiredUnpaidPaymentRegeneratesVnpayUrl() {
+        TestOrder testOrder = createPendingVNPayOrder(BigDecimal.valueOf(100000), 1);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("127.0.0.1");
+
+        VNPayUrlResponse first = paymentApplicationService.createVNPayPayment(
+                testOrder.order().getUser(),
+                testOrder.order().getId(),
+                request
+        );
+        Payment payment = paymentRepository.findById(testOrder.payment().getId()).orElseThrow();
+        String firstTxnRef = payment.getVnpTxnRef();
+        payment.setExpiredAt(LocalDateTime.now().minusMinutes(1));
+        paymentRepository.save(payment);
+
+        VNPayUrlResponse regenerated = paymentApplicationService.createVNPayPayment(
+                testOrder.order().getUser(),
+                testOrder.order().getId(),
+                request
+        );
+
+        Payment savedPayment = paymentRepository.findById(testOrder.payment().getId()).orElseThrow();
+        assertFalse(regenerated.getPaymentUrl().equals(first.getPaymentUrl()));
+        assertFalse(savedPayment.getVnpTxnRef().equals(firstTxnRef));
+        assertTrue(savedPayment.getExpiredAt().isAfter(LocalDateTime.now()));
     }
 
     @Test

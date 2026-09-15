@@ -1,6 +1,7 @@
 package com.ttthinh.shoe_shop_basic.order.service.impl;
 
 import com.ttthinh.shoe_shop_basic.checkout.dto.request.ShippingFeeRequest;
+import com.ttthinh.shoe_shop_basic.config.VNPayConfig;
 import com.ttthinh.shoe_shop_basic.order.dto.request.BuyNowRequest;
 import com.ttthinh.shoe_shop_basic.order.dto.request.CreateOrderRequest;
 import com.ttthinh.shoe_shop_basic.common.dto.PageResponse;
@@ -79,6 +80,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderStatusHistoryService orderStatusHistoryService;
     private final ProductDiscountService productDiscountService;
     private final ProductReviewRepository productReviewRepository;
+    private final VNPayConfig vnPayConfig;
 
     @Value("${cod.pending-timeout-minutes:1440}")
     private long codPendingTimeoutMinutes;
@@ -534,12 +536,16 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         if (paymentMethod == PaymentMethod.VNPAY) {
-            payment.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+            payment.setExpiredAt(LocalDateTime.now().plusMinutes(vnpayPaymentTimeoutMinutes()));
         } else if (paymentMethod == PaymentMethod.COD) {
             payment.setExpiredAt(LocalDateTime.now().plusMinutes(codPendingTimeoutMinutes));
         }
 
         return payment;
+    }
+
+    private long vnpayPaymentTimeoutMinutes() {
+        return vnPayConfig.getPaymentTimeoutMinutes() > 0 ? vnPayConfig.getPaymentTimeoutMinutes() : 15;
     }
 
     private void validateSupportedPaymentMethod(PaymentMethod paymentMethod) {

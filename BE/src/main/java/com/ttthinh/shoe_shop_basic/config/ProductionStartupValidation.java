@@ -14,8 +14,6 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class ProductionStartupValidation implements ApplicationRunner {
     private static final String DEFAULT_JWT_SECRET = "local-development-secret-key-change-me-please-32-characters-minimum";
-    private static final String DEFAULT_ADMIN_PASSWORD = "ChangeMe123!";
-    private static final String DEFAULT_DEMO_PASSWORD = "ChangeMe123!";
 
     private final Environment environment;
 
@@ -24,12 +22,6 @@ public class ProductionStartupValidation implements ApplicationRunner {
 
     @Value("${app.init.enabled:true}")
     private boolean initEnabled;
-
-    @Value("${app.init.admin-password:}")
-    private String adminPassword;
-
-    @Value("${app.init.demo-password:}")
-    private String demoPassword;
 
     @Value("${jwt.secret:}")
     private String jwtSecret;
@@ -42,10 +34,6 @@ public class ProductionStartupValidation implements ApplicationRunner {
         require(!initEnabled, "app.init.enabled must be false in production");
         require(jwtSecret != null && jwtSecret.length() >= 32 && !DEFAULT_JWT_SECRET.equals(jwtSecret),
                 "JWT_SECRET must be set to a non-default secret with at least 32 characters in production");
-        require(!DEFAULT_ADMIN_PASSWORD.equals(adminPassword),
-                "APP_INIT_ADMIN_PASSWORD must not use the local default in production");
-        require(!DEFAULT_DEMO_PASSWORD.equals(demoPassword),
-                "APP_INIT_DEMO_PASSWORD must not use the local default in production");
     }
 
     private boolean isProduction() {

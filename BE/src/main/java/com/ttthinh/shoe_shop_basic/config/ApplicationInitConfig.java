@@ -14,14 +14,21 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 
 @Configuration
 @Slf4j
 public class ApplicationInitConfig {
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
+
+    @Value("${app.env:local}")
+    private String appEnv;
 
     @Value("${app.init.admin-email:admin@shoe-shop.local}")
     private String adminEmail;
@@ -35,8 +42,9 @@ public class ApplicationInitConfig {
     @Value("${app.init.demo-password:ChangeMe123!}")
     private String demoPassword;
 
-    public ApplicationInitConfig(PasswordEncoder passwordEncoder) {
+    public ApplicationInitConfig(PasswordEncoder passwordEncoder, Environment environment) {
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Bean
@@ -47,6 +55,11 @@ public class ApplicationInitConfig {
             PermissionRepository permissionRepository
     ) {
         return args -> {
+            if (isProduction()) {
+                log.warn("Skipping database initialization because production environment is active");
+                return;
+            }
+
             log.info("===== START INITIALIZING DATABASE =====");
 
             Role roleUser = getOrCreateRole(roleRepository, "ROLE_USER", "User", "Default user role");
@@ -155,5 +168,18 @@ public class ApplicationInitConfig {
                     log.info("Created {}", code);
                     return permission;
                 });
+    }
+
+    private boolean isProduction() {
+        String normalizedEnv = normalize(appEnv);
+        return "prod".equals(normalizedEnv)
+                || "production".equals(normalizedEnv)
+                || Arrays.stream(environment.getActiveProfiles())
+                .map(this::normalize)
+                .anyMatch(profile -> "prod".equals(profile) || "production".equals(profile));
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 }

@@ -49,6 +49,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       OAUTH2_SUCCESS_URL: ${OAUTH2_SUCCESS_URL:-http://localhost/oauth2/success}
       PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-http://localhost:8080}
+      SERVER_FORWARD_HEADERS_STRATEGY: ${SERVER_FORWARD_HEADERS_STRATEGY:-framework}
       APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
       APP_COOKIE_SAME_SITE: ${APP_COOKIE_SAME_SITE:-Lax}
       DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-shoe_shop_basic}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -58,11 +59,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       CACHE_TYPE: redis
-      FLYWAY_ENABLED: "true"
-      JPA_DDL_AUTO: validate
+      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-false}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
       APP_INIT_ENABLED: "false"
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}

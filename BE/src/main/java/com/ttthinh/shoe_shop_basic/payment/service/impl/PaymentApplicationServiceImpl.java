@@ -1,5 +1,6 @@
 package com.ttthinh.shoe_shop_basic.payment.service.impl;
 
+import com.ttthinh.shoe_shop_basic.config.VNPayConfig;
 import com.ttthinh.shoe_shop_basic.payment.dto.request.VNPayPaymentRequest;
 import com.ttthinh.shoe_shop_basic.payment.dto.response.VNPayCallbackResponse;
 import com.ttthinh.shoe_shop_basic.payment.dto.response.VNPayProcessResult;
@@ -41,6 +42,7 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
     private final InventoryLockService inventoryLockService;
     private final OrderStatusHistoryService orderStatusHistoryService;
     private final VoucherService voucherService;
+    private final VNPayConfig vnPayConfig;
 
     @Override
     @Transactional
@@ -74,6 +76,7 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
         }
 
         LocalDateTime now = LocalDateTime.now();
+        boolean expired = payment.getExpiredAt() != null && !now.isBefore(payment.getExpiredAt());
         if (StringUtils.hasText(payment.getPaymentUrl())
                 && StringUtils.hasText(payment.getVnpTxnRef())
                 && payment.getPaymentUrl().contains("vnp_TxnRef=" + payment.getVnpTxnRef())
@@ -85,8 +88,11 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
                     .paymentUrl(payment.getPaymentUrl())
                     .build();
         }
-        if (payment.getExpiredAt() != null && !now.isBefore(payment.getExpiredAt())) {
-            throw new AppException(ErrorCode.VNPAY_PAYMENT_EXPIRED);
+        if (expired) {
+            log.info("Regenerating expired VNPay URL paymentId={}, orderId={}, previousTxnRef={}",
+                    payment.getId(), order.getId(), payment.getVnpTxnRef());
+            payment.setVnpTxnRef(buildVnpTxnRef(payment));
+            payment.setPaymentUrl(null);
         }
 
         VNPayPaymentRequest paymentRequest = VNPayPaymentRequest.builder()
@@ -99,7 +105,7 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
 
         String paymentUrl = vnPayService.createPaymentUrl(paymentRequest, request);
         payment.setPaymentUrl(paymentUrl);
-        payment.setExpiredAt(now.plusMinutes(15));
+        payment.setExpiredAt(now.plusMinutes(vnpayPaymentTimeoutMinutes()));
         paymentRepository.save(payment);
 
         return VNPayUrlResponse.builder()
@@ -233,8 +239,16 @@ public class PaymentApplicationServiceImpl implements PaymentApplicationService 
         return productTotal.add(shipping).subtract(discount).max(BigDecimal.ZERO);
     }
 
+    private long vnpayPaymentTimeoutMinutes() {
+        return vnPayConfig.getPaymentTimeoutMinutes() > 0 ? vnPayConfig.getPaymentTimeoutMinutes() : 15;
+    }
+
     private String buildVnpTxnRef(Payment payment) {
-        return "PAY" + compactId(payment.getId());
+        String paymentId = compactId(payment.getId());
+        if (paymentId.length() > 28) {
+            paymentId = paymentId.substring(0, 28);
+        }
+        return "PAY" + paymentId + System.currentTimeMillis();
     }
 
     private String compactId(String value) {

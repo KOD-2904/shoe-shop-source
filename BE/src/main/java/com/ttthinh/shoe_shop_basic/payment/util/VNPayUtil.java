@@ -14,6 +14,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -129,7 +132,7 @@ public class VNPayUtil {
         body.put("vnp_TransactionNo", payment.getTransactionId());
         body.put("vnp_TransactionDate", transactionDate);
         body.put("vnp_CreateBy", config.getRefundCreateBy());
-        body.put("vnp_CreateDate", java.time.LocalDateTime.now().format(formatter));
+        body.put("vnp_CreateDate", LocalDateTime.now(resolveVnpayZone(config)).format(formatter));
         body.put("vnp_IpAddr", "127.0.0.1");
         body.put("vnp_OrderInfo", orderInfo);
         body.put("vnp_SecureHash", hmacSHA512(config.getHashSecret(), refundHashData(body)));
@@ -144,7 +147,7 @@ public class VNPayUtil {
             }
             payment.setRefundRequestId(requestId);
             payment.setRefundTransactionId(value(response, "vnp_TransactionNo"));
-            payment.setRefundedAt(java.time.LocalDateTime.now());
+            payment.setRefundedAt(LocalDateTime.now(resolveVnpayZone(config)));
             payment.setStatus(PaymentStatus.REFUNDED);
         } catch (AppException exception) {
             throw exception;
@@ -159,6 +162,18 @@ public class VNPayUtil {
                 body.get("vnp_TxnRef"), body.get("vnp_Amount"), body.get("vnp_TransactionNo"),
                 body.get("vnp_TransactionDate"), body.get("vnp_CreateBy"), body.get("vnp_CreateDate"),
                 body.get("vnp_IpAddr"), body.get("vnp_OrderInfo"));
+    }
+
+    private static ZoneId resolveVnpayZone(VNPayConfig config) {
+        String timeZone = config != null ? config.getTimeZone() : null;
+        if (timeZone == null || timeZone.isBlank()) {
+            return ZoneId.of("Asia/Ho_Chi_Minh");
+        }
+        try {
+            return ZoneId.of(timeZone.trim());
+        } catch (DateTimeException exception) {
+            throw new IllegalStateException("Invalid vnpay.time-zone: " + timeZone, exception);
+        }
     }
 
     private static String normalizeRefundInfo(String reason, String orderId) {
